@@ -1,24 +1,62 @@
-from distutils.core import setup
-setup(
-  name = 'spacy-dictionary',         # How you named your package folder (MyLib)
-  packages = ['spacy-dictionary'],   # Chose the same as "name"
-  version = '0.1',      # Start with a small number and increase it with every change you make
-  license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
-  description = 'This is the small dictionary needed to run SpaCy',   # Give a short description about your library
-  author = 'Benjamin Johnson',                   # Type in your name
-  author_email = 'benjaminallanjohnson@gmail.com',      # Type in your E-Mail
-  url = 'https://github.com/g3n3ralb3n-wp/spacy-dictionary',   # Provide either the link to your github or to your website
-  download_url = 'https://github.com/user/reponame/archive/v_01.tar.gz',    # I explain this later on
-  keywords = ['NLP', 'dictionary', 'SpaCy'],   # Keywords that define your package best
-  install_requires=[            # I get to this in a second
-          'validators',
-          'beautifulsoup4',
-      ],
-  classifiers=[
-    'Development Status :: 3 - Alpha',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
-    'Intended Audience :: Scripters',      # Define that your audience are developers
-    'Topic :: Modelers :: NLP Tool',
-    'License :: OSI Approved :: MIT License',   # Again, pick a license
-    'Programming Language :: Python :: 3.6',      #Specify which pyhton versions that you want to support
-  ],
-)
+#!/usr/bin/env python
+# coding: utf8
+from __future__ import unicode_literals
+
+import io
+import json
+from os import path, walk
+from shutil import copy
+from setuptools import setup
+
+
+def load_meta(fp):
+    with io.open(fp, encoding='utf8') as f:
+        return json.load(f)
+
+
+def list_files(data_dir):
+    output = []
+    for root, _, filenames in walk(data_dir):
+        for filename in filenames:
+            if not filename.startswith('.'):
+                output.append(path.join(root, filename))
+    output = [path.relpath(p, path.dirname(data_dir)) for p in output]
+    output.append('meta.json')
+    return output
+
+
+def list_requirements(meta):
+    parent_package = meta.get('parent_package', 'spacy')
+    requirements = [parent_package + meta['spacy_version']]
+    if 'setup_requires' in meta:
+        requirements += meta['setup_requires']
+    return requirements
+
+
+def setup_package():
+    root = path.abspath(path.dirname(__file__))
+    meta_path = path.join(root, 'meta.json')
+    meta = load_meta(meta_path)
+    model_name = str(meta['lang'] + '_' + meta['name'])
+    model_dir = path.join(model_name, model_name + '-' + meta['version'])
+
+    copy(meta_path, path.join(model_name))
+    copy(meta_path, model_dir)
+
+    setup(
+        name=model_name,
+        description=meta['description'],
+        author=meta['author'],
+        author_email=meta['email'],
+        url=meta['url'],
+        version=meta['version'],
+        license=meta['license'],
+        packages=[model_name],
+        package_data={model_name: list_files(model_dir)},
+        install_requires=list_requirements(meta),
+        zip_safe=False,
+    )
+
+
+if __name__ == '__main__':
+    setup_package()
