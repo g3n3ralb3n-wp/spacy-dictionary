@@ -48,7 +48,7 @@ def setup_package():
         description=meta['description'],
         author=meta['author'],
         author_email=meta['email'],
-        url=meta['url'],
+        url='https://github.com/g3n3ralb3n-wp/spacy-dictionary/archive/v_0.1-alpha.tar.gz',
         version=meta['version'],
         license=meta['license'],
         packages=[model_name],
